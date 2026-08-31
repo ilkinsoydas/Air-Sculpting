@@ -1,0 +1,17 @@
+# Python ve Sanal Ortam
+__pycache__/
+.venv/
+env/
+venv/
+
+# Proje Veri ve Model Dosyaları
+hand_gestures.csv
+hand_gesture_model.pkl
+action.keras
+MP_Data/
+
+# IDE ve Editörler
+.vscode/
+
+# macOS sistem dosyaları
+.DS_Store
