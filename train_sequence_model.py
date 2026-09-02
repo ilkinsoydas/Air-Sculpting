@@ -4,7 +4,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 
-actions = np.array(["Extrude", "Rotate"])
+actions = np.array(["Extrude", "Rotate", "Idle", "Pinch"])
 no_sequences = 30
 sequence_length = 30
 
@@ -16,12 +16,19 @@ sequences, labels = [], []
 
 for action in actions:
     for sequence in range(no_sequences):
-        window = []
-        for frame_num in range(sequence_length):
-            res = np.load(os.path.join(data_path, action, str(sequence), f"{frame_num}.npy"))
-            window.append(res)
-        sequences.append(window)
+        sequence_folder = os.path.join(data_path, action, str(sequence))
+        
+        if os.path.isdir(sequence_folder):
+            window = []
+            for frame_num in range(sequence_length):
+                res = np.load(os.path.join(sequence_folder, f"{frame_num}.npy"))
+                window.append(res)
+            sequences.append(window)
+        else:
+            res = np.load(os.path.join(data_path, action, f"{sequence}.npy"))
+            sequences.append(res)
         labels.append(label_map[action])
+        
 x = np.array(sequences)
 y = to_categorical(labels).astype(int)
 
