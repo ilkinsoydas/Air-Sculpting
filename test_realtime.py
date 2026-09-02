@@ -4,12 +4,12 @@ from tensorflow.keras.models import load_model
 from hand_utils import HandProcessor
 
 model = load_model("action.keras")
-actions = np.array(["Extrude", "Rotate"])
+actions = np.array(["Extrude", "Rotate", "Idle", "Pinch"])
 processor = HandProcessor()
 
 sequence = []
 predictions = []
-threshold = 0.7
+threshold = 0.6
 
 cap = cv2.VideoCapture(0)
 while cap.isOpened():
@@ -26,7 +26,8 @@ while cap.isOpened():
         sequence = sequence[-30:]
         
         if len(sequence) == 30:
-            res = model.predict(np.expand_dims(sequence, axis=0))[0]
+            input_data = np.expand_dims(sequence, axis=0)
+            res = model(input_data, training = False)[0].numpy()
             if res[np.argmax(res)] > threshold:
                 action_name = actions[np.argmax(res)]
                 confidence = res[np.argmax(res)] * 100
