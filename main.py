@@ -10,7 +10,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 app = FastAPI()
 
 model = load_model("action.keras")
-actions = np.array(["Extrude", "Rotate", "Idle", "Pinch"])
+actions = np.array(["Extrude", "Rotate", "Idle", "Pinch", "Fist"])
 
 sequence = []
 threshold = 0.6

@@ -38,6 +38,8 @@
         let activeModel = null;
 
         const loader = new THREE.GLTFLoader();
+
+        let modelMeshes = [];
         
         loader.load('model.glb', function (gltf) {
             activeModel = gltf.scene;
@@ -45,9 +47,24 @@
             activeModel.scale.set(1, 1, 1); 
             activeModel.position.set(0, 0, 0);
 
-            scene.add(activeModel);
-            console.log("Model loaded successfully!");
+            modelMeshes = [];
+            activeModel.traverse((child) => {
+                if (child.isMesh) {
+                    modelMeshes.push(child);
+                    child.userData.originalPosition = child.position.clone();
+                    let explodeDir = child.position.clone().normalize();
 
+                    if (explodeDir.lengthSq() == 0) {
+                        explodeDir.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+                    }
+
+                    child.userData.explodedPosition = child.position.clone().add(explodeDir.multiplyScalar(3.0));
+                    child.userData.targetPosition = child.position.clone();
+                }
+            })
+            console.log("Model loaded successfully, Number of meshes: ", modelMeshes.length);
+
+            scene.add(activeModel);
         }, undefined, function (error) {
             console.error('An error occurred while loading the model:', error);
         });
@@ -57,7 +74,7 @@
         let targetPosY = 0;
         let targetScale = 1.0;
 
-        let currentGesture = "Idle";
+        let currentGesture = "None";
         let previousX = null;
         let previousY = null;
 
@@ -72,6 +89,7 @@
             if (data.gesture === "Rotate") infoDiv.style.color = "#ffeb3b"; 
             else if (data.gesture === "Pinch") infoDiv.style.color = "#4caf50"; 
             else if (data.gesture === "Extrude") infoDiv.style.color = "#2196f3"; 
+            else if (data.gesture == "Fist") infoDiv.style.color = "#9c27b0";
             else infoDiv.style.color = "white"; 
 
             if (currentGesture !== data.gesture) {
@@ -80,9 +98,52 @@
             }
             currentGesture = data.gesture;
 
-            if (currentGesture === "Idle" || !data.gesture) {
+            if (!data.gesture || currentGesture === "None") {
                 previousX = null;
                 previousY = null;
+                return;
+            }
+
+            if (currentGesture === "Idle" || !data.gesture) {
+                if (modelMeshes && modelMeshes.length > 0) {
+                    modelMeshes.forEach(mesh => {
+                        mesh.userData.targetPosition = mesh.userData.explodedPosition;
+                    });
+                }
+                
+                previousX = null;
+                previousY = null;
+                return; 
+            }
+
+            if (currentGesture === "Idle" || !data.gesture) {
+                // ... burası az önce eklediğimiz Idle kodu, aynen kalıyor
+                if (modelMeshes && modelMeshes.length > 0) {
+                    modelMeshes.forEach(mesh => {
+                        mesh.userData.targetPosition = mesh.userData.explodedPosition;
+                    });
+                }
+                previousX = null;
+                previousY = null;
+                return; 
+            }
+
+            // YENİ EKLENEN KISIM: Fist (Yumruk) Hareketi
+            if (currentGesture === "Fist") {
+                if (modelMeshes && modelMeshes.length > 0) {
+                    modelMeshes.forEach(mesh => {
+                        // Hedefi tekrar orijinal başlangıç noktası yap
+                        mesh.userData.targetPosition = mesh.userData.originalPosition;
+                    });
+                }
+                previousX = null;
+                previousY = null;
+                return; // Diğer hareketlere (Rotate vs) girmeden kes
+            }
+
+            if (previousX === null || previousY === null) {
+                previousX = data.x;
+                previousY = data.y;
                 return;
             }
 
@@ -127,6 +188,15 @@
                 activeModel.scale.x += (targetScale - activeModel.scale.x) * 0.2;
                 activeModel.scale.y += (targetScale - activeModel.scale.y) * 0.2;
                 activeModel.scale.z += (targetScale - activeModel.scale.z) * 0.2;
+
+                if (modelMeshes && modelMeshes.length > 0) {
+                    modelMeshes.forEach(mesh => {
+                        if (mesh.userData.targetPosition) {
+                            // Parça, mevcut konumundan 'targetPosition'a doğru %5 (0.05) hızında kaysın
+                            mesh.position.lerp(mesh.userData.targetPosition, 0.05);
+                        }
+                    });
+                }
             }
 
             renderer.render(scene, camera);
