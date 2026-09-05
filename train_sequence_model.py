@@ -4,7 +4,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 
-actions = np.array(["Extrude", "Rotate", "Idle", "Pinch"])
+actions = np.array(["Extrude", "Rotate", "Idle", "Pinch", "Fist"])
 no_sequences = 30
 sequence_length = 30
 
