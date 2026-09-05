@@ -3,7 +3,7 @@ import numpy as np
 import os
 from hand_utils import HandProcessor
 
-actions = np.array(["Extrude", "Rotate"])
+actions = np.array(["Fist"])
 
 no_sequences = 30
 sequence_length = 30

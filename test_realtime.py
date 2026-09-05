@@ -4,7 +4,7 @@ from tensorflow.keras.models import load_model
 from hand_utils import HandProcessor
 
 model = load_model("action.keras")
-actions = np.array(["Extrude", "Rotate", "Idle", "Pinch"])
+actions = np.array(["Extrude", "Rotate", "Idle", "Pinch", "Fist"])
 processor = HandProcessor()
 
 sequence = []
