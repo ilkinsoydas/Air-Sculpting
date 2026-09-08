@@ -22,16 +22,16 @@
     <script>
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 5;
+        camera.position.set(0, 0, 0.2);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
         scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
         directionalLight.position.set(5, 5, 5);
         scene.add(directionalLight);
 
@@ -41,29 +41,30 @@
 
         let modelMeshes = [];
         
-        loader.load('model.glb', function (gltf) {
+        loader.load('scene.gltf', function (gltf) {
             activeModel = gltf.scene;
             
             activeModel.scale.set(1, 1, 1); 
             activeModel.position.set(0, 0, 0);
+            console.log("BURAYA GELDİ");
 
-            modelMeshes = [];
+            const box = new THREE.Box3().setFromObject(activeModel);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+
+            console.log("Model Center: ", center);
+            console.log("Model Size: ", size);
+
+            activeModel.position.sub(center);
+            scene.add(activeModel);
+
+            const maxDim = Math.max(size.x, size.y, size.z);
+            camera.position.set(0, 0, maxDim * 1.5);
+
             activeModel.traverse((child) => {
-                if (child.isMesh) {
-                    modelMeshes.push(child);
-                    child.userData.originalPosition = child.position.clone();
-                    let explodeDir = child.position.clone().normalize();
-
-                    if (explodeDir.lengthSq() == 0) {
-                        explodeDir.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
-                    }
-
-                    child.userData.explodedPosition = child.position.clone().add(explodeDir.multiplyScalar(3.0));
-                    child.userData.targetPosition = child.position.clone();
-                }
+                console.log("Object: ", child.name, " Type: ", child.type);
             })
-            console.log("Model loaded successfully, Number of meshes: ", modelMeshes.length);
-
+            
             scene.add(activeModel);
         }, undefined, function (error) {
             console.error('An error occurred while loading the model:', error);
@@ -116,18 +117,6 @@
                 return; 
             }
 
-            if (currentGesture === "Idle" || !data.gesture) {
-                // ... burası az önce eklediğimiz Idle kodu, aynen kalıyor
-                if (modelMeshes && modelMeshes.length > 0) {
-                    modelMeshes.forEach(mesh => {
-                        mesh.userData.targetPosition = mesh.userData.explodedPosition;
-                    });
-                }
-                previousX = null;
-                previousY = null;
-                return; 
-            }
-
             // YENİ EKLENEN KISIM: Fist (Yumruk) Hareketi
             if (currentGesture === "Fist") {
                 if (modelMeshes && modelMeshes.length > 0) {
@@ -146,15 +135,6 @@
                 previousY = data.y;
                 return;
             }
-
-            if (previousX === null || previousY === null) {
-                previousX = data.x;
-                previousY = data.y;
-                return;
-            }
-
-            let deltaX = data.x - previousX;
-            let deltaY = data.y - previousY;
 
             if (currentGesture === "Rotate") {
                 let qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), deltaX * 4.0);
