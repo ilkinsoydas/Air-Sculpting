@@ -22,7 +22,7 @@
     <script>
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 0.2);
+        camera.position.set(0, 0, 2.0);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -39,14 +39,13 @@
 
         const loader = new THREE.GLTFLoader();
 
-        let modelMeshes = [];
+        let importantParts = [];
         
         loader.load('scene.gltf', function (gltf) {
             activeModel = gltf.scene;
             
             activeModel.scale.set(1, 1, 1); 
             activeModel.position.set(0, 0, 0);
-            console.log("BURAYA GELDİ");
 
             const box = new THREE.Box3().setFromObject(activeModel);
             const center = box.getCenter(new THREE.Vector3());
@@ -59,13 +58,68 @@
             scene.add(activeModel);
 
             const maxDim = Math.max(size.x, size.y, size.z);
-            camera.position.set(0, 0, maxDim * 1.5);
+            camera.position.set(0, maxDim * 1.5, 0);
+            camera.lookAt(0, 0, 0);
 
-            activeModel.traverse((child) => {
-                console.log("Object: ", child.name, " Type: ", child.type);
-            })
-            
-            scene.add(activeModel);
+            console.log("MAX DIM:", maxDim);
+            console.log("CAMERA:", camera.position);
+            console.log("MODEL SCALE:", activeModel.scale);
+            console.log("MODEL POSITION:", activeModel.position);
+
+            const partNames = [
+                "CPU",
+                "RAM",
+                "RAM1",
+                "RAM2",
+                "RAM3",
+                "M2"
+            ];
+            partNames.forEach((name) => {
+                const part = activeModel.getObjectByName(name);
+                if (part) {
+                    part.userData.originalPosition = part.position.clone();
+                    
+                    const distance = maxDim * 10.0;
+
+                    console.log(
+                        "name:", name,
+                        "position:", part.position,
+                        "parent:", part.parent?.name
+                    );
+
+                    if (name == "CPU") {
+                        part.userData.explodedPosition = part.position.clone();
+                        part.userData.explodedPosition.y += distance;
+                    }
+                    else if (name == "RAM") {
+                        part.userData.explodedPosition = part.position.clone();
+                        part.userData.explodedPosition.x += distance;
+                    }
+                    else if(name == "RAM1") {
+                        part.userData.explodedPosition = part.position.clone();
+                        part.userData.explodedPosition.x -= distance;
+                    }
+                    else if(name == "RAM2") {
+                        part.userData.explodedPosition = part.position.clone();
+                        part.userData.explodedPosition.z += distance;
+                    }
+                    else if (name == "RAM3") {
+                        part.userData.explodedPosition = part.position.clone();
+                        part.userData.explodedPosition.z -= distance;
+                    }
+                    else if(name == "M2") {
+                        part.userData.explodedPosition = part.position.clone();
+                        part.userData.explodedPosition.y -= distance;
+                    }
+
+                    importantParts.push(part);
+                    console.log(`Found part:`, name);
+                }
+                else {
+                    console.warn(`Part not found:`, name);
+                }
+
+            });
         }, undefined, function (error) {
             console.error('An error occurred while loading the model:', error);
         });
@@ -106,9 +160,9 @@
             }
 
             if (currentGesture === "Idle" || !data.gesture) {
-                if (modelMeshes && modelMeshes.length > 0) {
-                    modelMeshes.forEach(mesh => {
-                        mesh.userData.targetPosition = mesh.userData.explodedPosition;
+                if (importantParts && importantParts.length > 0) {
+                    importantParts.forEach(part => {
+                        part.userData.targetPosition = part.userData.explodedPosition;
                     });
                 }
                 
@@ -117,17 +171,15 @@
                 return; 
             }
 
-            // YENİ EKLENEN KISIM: Fist (Yumruk) Hareketi
             if (currentGesture === "Fist") {
-                if (modelMeshes && modelMeshes.length > 0) {
-                    modelMeshes.forEach(mesh => {
-                        // Hedefi tekrar orijinal başlangıç noktası yap
-                        mesh.userData.targetPosition = mesh.userData.originalPosition;
+                if (importantParts && importantParts.length > 0) {
+                    importantParts.forEach(part => {
+                        part.userData.targetPosition = part.userData.originalPosition;
                     });
                 }
                 previousX = null;
                 previousY = null;
-                return; // Diğer hareketlere (Rotate vs) girmeden kes
+                return;
             }
 
             if (previousX === null || previousY === null) {
@@ -135,6 +187,9 @@
                 previousY = data.y;
                 return;
             }
+
+            const deltaX = data.x - previousX;
+            const deltaY = data.y - previousY;
 
             if (currentGesture === "Rotate") {
                 let qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), deltaX * 4.0);
@@ -169,11 +224,10 @@
                 activeModel.scale.y += (targetScale - activeModel.scale.y) * 0.2;
                 activeModel.scale.z += (targetScale - activeModel.scale.z) * 0.2;
 
-                if (modelMeshes && modelMeshes.length > 0) {
-                    modelMeshes.forEach(mesh => {
-                        if (mesh.userData.targetPosition) {
-                            // Parça, mevcut konumundan 'targetPosition'a doğru %5 (0.05) hızında kaysın
-                            mesh.position.lerp(mesh.userData.targetPosition, 0.05);
+                if (importantParts && importantParts.length > 0) {
+                    importantParts.forEach(part => {
+                        if (part.userData.targetPosition) {
+                            part.position.lerp(part.userData.targetPosition, 0.2);
                         }
                     });
                 }
