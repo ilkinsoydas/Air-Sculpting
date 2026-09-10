@@ -34,8 +34,6 @@
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.2;
-        renderer.shadowMap.enable = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 
@@ -44,17 +42,6 @@
 
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1.4);
         directionalLight.position.set(10, 15, 10);
-        directionalLight.castShadow = true;
-        directionalLight.shadow.mapSize.width = 2048; 
-
-        directionalLight.shadow.mapSize.height = 2048;
-        directionalLight.shadow.camera.near = 0.5;
-        directionalLight.shadow.camera.far = 50;
-
-        directionalLight.shadow.camera.left = -15;
-        directionalLight.shadow.camera.right = 15;
-        directionalLight.shadow.camera.top = 15;
-        directionalLight.shadow.camera.bottom = -15;
 
         directionalLight.shadow.bias = -0.001;
 
@@ -128,9 +115,17 @@
 
             activeModel.position.sub(center);
             scene.add(activeModel);
+            activeModel.rotation.x = Math.PI / 2;
+
+            targetPosX = activeModel.position.x;
+            targetPosY = activeModel.position.y;
+            targetScale = activeModel.scale.x;
+
+            targetQuaternion.copy(activeModel.quaternion);
 
             const maxDim = Math.max(size.x, size.y, size.z);
-            camera.position.set(0, maxDim * 1.5, 0);
+            moveSpeed = maxDim * 2.5;
+            camera.position.set(0, 0, maxDim * 1.5);
             camera.lookAt(0, 0, 0);
 
             console.log("MAX DIM:", maxDim);
@@ -200,6 +195,7 @@
         let targetPosX = 0;
         let targetPosY = 0;
         let targetScale = 1.0;
+        let moveSpeed = 1.0;
 
         let currentGesture = "None";
         let previousX = null;
@@ -260,8 +256,12 @@
                 return;
             }
 
-            const deltaX = data.x - previousX;
-            const deltaY = data.y - previousY;
+            const rawDeltaX = data.x - previousX;
+            const rawDeltaY = data.y - previousY;
+
+            const maxDelta = 0.15;
+            const deltaX = Math.max(Math.min(rawDeltaX, maxDelta), -maxDelta);
+            const deltaY = Math.max(Math.min(rawDeltaY, maxDelta), -maxDelta);
 
             if (currentGesture === "Rotate") {
                 let qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), deltaX * 4.0);
@@ -270,13 +270,13 @@
                 targetQuaternion.premultiply(qY);
             } 
             else if (currentGesture === "Pinch") {
-                targetPosX += deltaX * 15.0; 
-                targetPosY -= deltaY * 15.0; 
+                targetPosX += deltaX * moveSpeed; 
+                targetPosY -= deltaY * moveSpeed; 
             } 
             else if (currentGesture === "Extrude") {
-                targetScale -= deltaY * 5.0; 
-                if (targetScale > 2.5) targetScale = 2.5;
-                if (targetScale < 0.3) targetScale = 0.3;
+                targetScale -= deltaY * 1.0; 
+                if (targetScale > 2.0) targetScale = 2.0;
+                if (targetScale < 0.5) targetScale = 0.5;
             }
 
             previousX = data.x;
