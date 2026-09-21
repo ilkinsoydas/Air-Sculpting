@@ -1,7 +1,7 @@
 import cv2
 import math
 import json
-from hand_utils import HandProcessor
+from core.hand_utils import HandProcessor
 import numpy as np
 from tensorflow.keras.models import load_model
 import asyncio

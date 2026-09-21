@@ -1,7 +1,10 @@
 import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
-from hand_utils import HandProcessor
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from core.hand_utils import HandProcessor
 
 model = load_model("action.keras")
 actions = np.array(["Extrude", "Rotate", "Idle", "Pinch", "Fist"])
