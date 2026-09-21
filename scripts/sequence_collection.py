@@ -1,7 +1,9 @@
 import cv2
 import numpy as np
 import os
-from hand_utils import HandProcessor
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from core.hand_utils import HandProcessor
 
 actions = np.array(["Fist"])
 
