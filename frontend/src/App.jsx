@@ -1,27 +1,27 @@
-import React, { useState, useRef, useEffect, Suspense } from 'react';
+import React, { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, useGLTF, Bounds } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 const EXPLODE_PARTS = [
-  'CPU', 'RAM', 'RAM1', 'RAM2', 'RAM3', 'M2', 
-  'pCube476_I_O_Cover_0', 
-  'pCube315_BoardChipsetM_0', 
-  'pCube305_BoardM2CoverM_0', 
+  'CPU', 'RAM', 'RAM1', 'RAM2', 'RAM3', 'M2',
+  'pCube476_I_O_Cover_0',
+  'pCube315_BoardChipsetM_0',
+  'pCube305_BoardM2CoverM_0',
   'pCube304_BoardM2Cover1M_0'
 ];
-const EXPLODE_DISTANCE = 3.0; // Ayarlanabilir havaya kalkma mesafesi
+const EXPLODE_DISTANCE = 3.0;
 
-function Motherboard({ exploded }) {
+function Motherboard({ explodeFactor }) {
   const { scene } = useGLTF('/scene_converted.gltf');
   const group = useRef();
-  
+
   // Parçaların orijinal pozisyonlarını saklamak için
   const originalPositions = useRef({});
 
   useEffect(() => {
-    // Model yüklendiğinde tüm parça isimlerini konsola yazdır (Kullanıcının görmesi için)
+
     console.log("=== MODELDEKI TUM PARCALAR ===");
     scene.traverse((child) => {
       if (child.isMesh || child.isGroup) {
@@ -30,7 +30,7 @@ function Motherboard({ exploded }) {
     });
     console.log("=============================");
 
-    // Model yüklendiğinde orijinal pozisyonları kaydet
+    //orijinal pozisyonları kaydet
     EXPLODE_PARTS.forEach((partName) => {
       const part = scene.getObjectByName(partName);
       if (part && !originalPositions.current[partName]) {
@@ -40,15 +40,13 @@ function Motherboard({ exploded }) {
   }, [scene]);
 
   useFrame((state, delta) => {
-    // Her karede parçaları hedefe doğru yumuşakça hareket ettir (Lerp)
+
     EXPLODE_PARTS.forEach((partName) => {
       const part = scene.getObjectByName(partName);
       if (part && originalPositions.current[partName]) {
-        // Anakartın yüzeyine dik olarak (Z ekseninde) havaya kalkması için .z kullanıyoruz
-        const targetZ = exploded 
-          ? originalPositions.current[partName].z + EXPLODE_DISTANCE 
-          : originalPositions.current[partName].z;
-          
+
+        const targetZ = originalPositions.current[partName].z + (EXPLODE_DISTANCE * explodeFactor * 2);
+
         part.position.z = THREE.MathUtils.lerp(part.position.z, targetZ, delta * 5);
       }
     });
@@ -62,16 +60,29 @@ function Motherboard({ exploded }) {
 }
 
 function App() {
-  const [exploded, setExploded] = useState(false);
+  const [explodeFactor, setExplodeFactor] = useState(0);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.code === 'Space') {
-        setExploded((prev) => !prev);
+    const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+
+
+    ws.onopen = () => {
+      console.log("Connected to AI")
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      console.log("Received gesture:", data.gesture, " | Distance: ", data.pinch_distance);
+
+      if (data.gesture === "Extrude") {
+        setExplodeFactor(data.pinch_distance);
+      }
+      else if (data.gesture === "Idle" || data.gesture === "Rotate" || data.gesture === "Pinch") {
+        setExplodeFactor(0)
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => ws.close();
   }, []);
 
   return (
@@ -83,7 +94,7 @@ function App() {
       }}>
         <h2>Air Sculpting</h2>
         <p>Press <b>Space</b> to Explode/Collapse.</p>
-        <p>Status: {exploded ? "Exploded" : "Assembled"}</p>
+        <p>Status: {explodeFactor > 0.2 ? "Exploding..." : "Assembled"}</p>
       </div>
 
       {/* 3D Canvas */}
@@ -91,11 +102,11 @@ function App() {
         <color attach="background" args={['#1a1a1a']} />
         <ambientLight intensity={2.0} />
         <directionalLight position={[10, 10, 10]} intensity={2.5} />
-        
+
         {/* We'll load the model here */}
         <Suspense fallback={null}>
           <Bounds fit clip observe margin={1.2}>
-            <Motherboard exploded={exploded} />
+            <Motherboard explodeFactor={explodeFactor} />
           </Bounds>
           <Environment preset="city" />
         </Suspense>
