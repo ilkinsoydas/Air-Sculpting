@@ -15,6 +15,7 @@ class HandProcessor:
         keypoints = np.zeros(42)
         hand_found = False
         cursor_x, cursor_y = 0.5, 0.5
+        pinch_distance = 0.0
         
         if results.multi_hand_landmarks:
             hand_found = True
@@ -23,7 +24,11 @@ class HandProcessor:
 
                 cursor_x = hand_landmarks.landmark[8].x
                 cursor_y = hand_landmarks.landmark[8].y
-    
+
+                thumb_x = hand_landmarks.landmark[4].x
+                thumb_y = hand_landmarks.landmark[4].y
+                pinch_distance = math.sqrt((cursor_x - thumb_x) ** 2 + (cursor_y - thumb_y) ** 2)
+
                 base_x = hand_landmarks.landmark[0].x
                 base_y = hand_landmarks.landmark[0].y
                 middle_mcp_x = hand_landmarks.landmark[9].x
@@ -38,4 +43,4 @@ class HandProcessor:
                     row_data.append((lm.y - base_y) / hand_size)
 
                 keypoints = np.array(row_data)
-        return frame, keypoints, hand_found, cursor_x, cursor_y
+        return frame, keypoints, hand_found, cursor_x, cursor_y, pinch_distance

@@ -35,7 +35,7 @@ async def process_camera(websocket: WebSocket):
                 continue
             frame = cv2.flip(frame, 1)
             
-            frame, keypoints, hand_found, cursor_x, cursor_y = processor.process_frame(frame)
+            frame, keypoints, hand_found, cursor_x, cursor_y, pinch_distance = processor.process_frame(frame)
             
             if hand_found and keypoints is not None:
                 sequence.append(keypoints)
@@ -55,7 +55,8 @@ async def process_camera(websocket: WebSocket):
                         data_packet = {
                             "gesture": action_name,
                             "x": float(cursor_x),
-                            "y": float(cursor_y)
+                            "y": float(cursor_y),
+                            "pinch_distance": float(pinch_distance)
                         }
                         
                         await websocket.send_json(data_packet)
