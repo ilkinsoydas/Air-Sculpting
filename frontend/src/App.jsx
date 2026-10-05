@@ -60,6 +60,7 @@ function App() {
   const [targetRotation, setTargetRotation] = useState({ x: 0, y: 0 });
   const [handPosition, setHandPosition] = useState({ x: 0, y: 0 });
   const lastHandPos = useRef({ x: null, y: null });
+  const [activeGesture, setActiveGesture] = useState("Idle");
 
   useEffect(() => {
     const ws = new WebSocket("ws://127.0.0.1:8000/ws");
@@ -70,6 +71,10 @@ function App() {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+
+      if (data.gesture) {
+        setActiveGesture(data.gesture);
+      }
 
       if (data.gesture === "Extrude") {
         setExplodeFactor(data.pinch_distance);
@@ -122,12 +127,31 @@ function App() {
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       {/* UI Overlay */}
       <div style={{
-        position: 'absolute', top: 20, left: 20, zIndex: 10,
-        background: 'rgba(0,0,0,0.7)', padding: '20px', borderRadius: '10px'
+        position: 'absolute', top: 30, left: 30, zIndex: 10,
+        background: 'rgba(10, 15, 30, 0.85)', padding: '25px', borderRadius: '15px',
+        border: '1px solid rgba(0, 255, 255, 0.2)',
+        boxShadow: '0 0 20px rgba(0, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)',
+        color: '#fff', fontFamily: 'monospace'
       }}>
-        <h2>Air Sculpting</h2>
-        <p>Press <b>Space</b> to Explode/Collapse.</p>
-        <p>Status: {explodeFactor > 0.2 ? "Exploding..." : "Assembled"}</p>
+        <h2 style={{ margin: '0 0 15px 0', letterSpacing: '2px', color: '#00ffff' }}>AIR SCULPTING</h2>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '20px' }}>
+          <span style={{ fontSize: '12px', opacity: 0.6, letterSpacing: '1px' }}>SYS.STATE:</span>
+          <div style={{
+            padding: '8px 16px', borderRadius: '20px', fontSize: '14px',
+            background: activeGesture !== 'Idle' ? 'rgba(0, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+            color: activeGesture !== 'Idle' ? '#00ffff' : '#888',
+            border: `1px solid ${activeGesture !== 'Idle' ? '#00ffff' : '#444'}`,
+            boxShadow: activeGesture !== 'Idle' ? '0 0 15px rgba(0, 255, 255, 0.4)' : 'none',
+            transition: 'all 0.3s ease', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase'
+          }}>
+            {activeGesture}
+          </div>
+        </div>
+        <div style={{ marginTop: '20px', fontSize: '12px', color: '#888' }}>
+          CORE TEMP: {explodeFactor > 0.05 ? (explodeFactor * 100).toFixed(0) + '°C' : 'STABLE'}
+        </div>
       </div>
 
       {/* 3D Canvas */}
