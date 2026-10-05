@@ -17,8 +17,6 @@ threshold = 0.80
 
 processor = HandProcessor()
 
-
-
 cap = cv2.VideoCapture(0)
 
 @app.websocket("/ws")
@@ -55,6 +53,9 @@ async def process_camera(websocket: WebSocket):
 
                         if predictions_history.count(action_name) == 5:
                             final_gesture = action_name
+                            if final_gesture == "Extrude" and pinch_distance < 0.15:
+                                final_gesture = "Idle"
+
                         else:
                             final_gesture = "Idle"
                         

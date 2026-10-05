@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment, useGLTF, Bounds } from '@react-three/drei';
+import { OrbitControls, Environment, useGLTF, Bounds, Center } from '@react-three/drei';
 import * as THREE from 'three';
 
 const EXPLODE_PARTS = [
@@ -34,22 +34,26 @@ function Motherboard({ explodeFactor, targetRotation, handPosition }) {
       if (part && originalPositions.current[partName]) {
         const targetZ = originalPositions.current[partName].z + (EXPLODE_DISTANCE * explodeFactor * 2);
         part.position.z = THREE.MathUtils.lerp(part.position.z, targetZ, delta * 2);
+
+        const targetX = originalPositions.current[partName].x + (handPosition.x * explodeFactor * 10);
+        const targetY = originalPositions.current[partName].y + (handPosition.y * explodeFactor * 10);
+        part.position.x = THREE.MathUtils.lerp(part.position.x, targetX, delta * 2);
+        part.position.y = THREE.MathUtils.lerp(part.position.y, targetY, delta * 2);
       }
     });
 
     if (outerGroup.current) {
-      outerGroup.current.position.x = THREE.MathUtils.lerp(outerGroup.current.position.x, handPosition.x, delta * 2);
-      outerGroup.current.position.y = THREE.MathUtils.lerp(outerGroup.current.position.y, handPosition.y, delta * 2);
-
       outerGroup.current.rotation.x = THREE.MathUtils.lerp(outerGroup.current.rotation.x, targetRotation.x, delta * 5);
       outerGroup.current.rotation.y = THREE.MathUtils.lerp(outerGroup.current.rotation.y, targetRotation.y, delta * 5);
     }
   });
 
   return (
-    <group ref={outerGroup}>
+    <group ref={outerGroup} scale={5}>
       <group ref={group} dispose={null} rotation={[Math.PI / 2, 0, 0]}>
-        <primitive object={scene} />
+        <Center>
+          <primitive object={scene} />
+        </Center>
       </group>
     </group>
   );
@@ -78,8 +82,9 @@ function App() {
 
       if (data.gesture === "Extrude") {
         setExplodeFactor(data.pinch_distance);
+        lastHandPos.current = { x: null, y: null };
       }
-      else if (data.gesture === "Rotate") {
+      if (data.gesture === "Rotate") {
         if (lastHandPos.current.x === null) {
 
           lastHandPos.current = { x: data.x, y: data.y };
@@ -93,8 +98,8 @@ function App() {
           const deltaY = smoothedY - lastHandPos.current.y;
 
           setTargetRotation(prev => ({
-            x: prev.x + (deltaY * 5),
-            y: prev.y + (deltaX * 5)
+            x: prev.x + (deltaY * 10),
+            y: prev.y + (deltaX * 10)
           }));
 
           lastHandPos.current = { x: smoothedX, y: smoothedY };
@@ -155,15 +160,15 @@ function App() {
       </div>
 
       {/* 3D Canvas */}
-      <Canvas camera={{ position: [0, 2, 5], fov: 50 }}>
+      <Canvas camera={{ position: [0, 1, 4], fov: 50 }}>
         <color attach="background" args={['#1a1a1a']} />
         <ambientLight intensity={2.0} />
         <directionalLight position={[10, 10, 10]} intensity={2.5} />
 
         <Suspense fallback={null}>
-          <Bounds fit clip observe margin={1.2}>
+          <Center scale={6}>
             <Motherboard explodeFactor={explodeFactor} targetRotation={targetRotation} handPosition={handPosition} />
-          </Bounds>
+          </Center>
           <Environment preset="city" />
         </Suspense>
       </Canvas>
