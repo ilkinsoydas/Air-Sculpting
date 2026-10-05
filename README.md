@@ -1,8 +1,8 @@
-# Air Sculpting ✋💻
+# Air Sculpting 
 
 Air Sculpting is a futuristic, gesture-controlled 3D modeling and exploration interface. It leverages computer vision and AI to let users manipulate 3D objects in real-time through a web browser, without touching a mouse or keyboard. 
 
-## 🚀 Features
+## Features
 
 - **Gesture Control**: Use intuitive hand signs (Pinch, Fist, Rotate, Extrude, Idle) to interact with the environment.
 - **Real-Time 3D Rendering**: Built with React, Three.js, and React Three Fiber for a smooth, hardware-accelerated 3D experience.
@@ -10,7 +10,7 @@ Air Sculpting is a futuristic, gesture-controlled 3D modeling and exploration in
 - **WebSocket Streaming**: Seamless, low-latency communication between the AI computer vision engine and the frontend UI.
 - **Holographic Aesthetics**: Designed with premium, futuristic aesthetics inspired by modern sci-fi interfaces.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 - **React.js** + **Vite**
@@ -24,11 +24,11 @@ Air Sculpting is a futuristic, gesture-controlled 3D modeling and exploration in
 - **MediaPipe** (Hand tracking)
 - **TensorFlow / Keras** (Custom Gesture Classification Model)
 
-## 📦 Setup & Installation
+## Setup & Installation
 
 *Instructions for running the local dev servers (Vite + Uvicorn) will be added here as the project matures.*
 
-## 🔮 Future Roadmap
+## Future Roadmap
 
 - [ ] Smooth delta-based rotation with Kalman/EMA jitter filtering
 - [ ] Multi-model carousel (Swipe to switch objects)
@@ -36,4 +36,4 @@ Air Sculpting is a futuristic, gesture-controlled 3D modeling and exploration in
 - [ ] UI control panels navigable via gestures
 
 ---
-*Built with ❤️ and AI.*
+
