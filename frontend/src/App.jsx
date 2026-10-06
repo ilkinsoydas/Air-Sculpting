@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Environment, useGLTF, Bounds, Center, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 
+
 const EXPLODE_PARTS = [
   'CPU', 'RAM', 'RAM1', 'RAM2', 'RAM3', 'M2',
   'pCube476_I_O_Cover_0',
@@ -12,7 +13,7 @@ const EXPLODE_PARTS = [
 ];
 const EXPLODE_DISTANCE = 3.0;
 
-function Motherboard({ explodeFactor, targetRotation, handPosition }) {
+function Motherboard({ explodeFactor, targetRotation, handPosition, activeGesture }) {
   const { scene } = useGLTF('/scene_converted.gltf');
   const group = useRef();
   const outerGroup = useRef();
@@ -160,7 +161,7 @@ function App() {
 
         <Suspense fallback={null}>
           <Center scale={6}>
-            <Motherboard explodeFactor={explodeFactor} targetRotation={targetRotation} handPosition={handPosition} />
+            <Motherboard explodeFactor={explodeFactor} targetRotation={targetRotation} handPosition={handPosition} activeGesture={activeGesture} />
           </Center>
 
           {/* 360 Derece Stüdyo Ortamı */}

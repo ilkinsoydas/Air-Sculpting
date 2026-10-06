@@ -34,7 +34,9 @@ async def process_camera(websocket: WebSocket):
                 continue
             frame = cv2.flip(frame, 1)
             
-            frame, keypoints, hand_found, cursor_x, cursor_y, pinch_distance = processor.process_frame(frame)
+            frame, keypoints, hand_found, cursor_x, cursor_y, pinch_distance, thumb_folded_distance = processor.process_frame(frame)
+
+
             
             if hand_found and keypoints is not None:
                 sequence.append(keypoints)
@@ -53,8 +55,9 @@ async def process_camera(websocket: WebSocket):
 
                         if predictions_history.count(action_name) == 5:
                             final_gesture = action_name
-                            if final_gesture == "Extrude" and pinch_distance < 0.15:
-                                final_gesture = "Idle"
+
+                            if final_gesture == "Extrude" and thumb_folded_distance < 0.15:
+                                final_gesture = "Rotate"
 
                         else:
                             final_gesture = "Idle"
