@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment, useGLTF, Bounds, Center } from '@react-three/drei';
+import { OrbitControls, Environment, useGLTF, Bounds, Center, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 
 const EXPLODE_PARTS = [
@@ -155,7 +155,6 @@ function App() {
 
       {/* 3D Canvas */}
       <Canvas camera={{ position: [0, 1, 4], fov: 50 }}>
-        <color attach="background" args={['#1a1a1a']} />
         <ambientLight intensity={2.0} />
         <directionalLight position={[10, 10, 10]} intensity={2.5} />
 
@@ -163,7 +162,12 @@ function App() {
           <Center scale={6}>
             <Motherboard explodeFactor={explodeFactor} targetRotation={targetRotation} handPosition={handPosition} />
           </Center>
-          <Environment preset="city" />
+
+          {/* 360 Derece Stüdyo Ortamı */}
+          <Environment preset="city" background backgroundBlurriness={0.6} />
+
+          {/* Siberpunk Zemin Gölgesi */}
+          <ContactShadows position={[0, -1.5, 0]} opacity={0.7} scale={20} blur={2.5} far={4} color="#00ffff" />
         </Suspense>
       </Canvas>
     </div>
