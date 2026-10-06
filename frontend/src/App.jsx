@@ -80,33 +80,26 @@ function App() {
         setActiveGesture(data.gesture);
       }
 
+      if (lastHandPos.current.x === null) {
+        lastHandPos.current = { x: data.x, y: data.y };
+      }
+
+      const smoothedX = (data.x * 0.3) + (lastHandPos.current.x * 0.7);
+      const smoothedY = (data.y * 0.3) + (lastHandPos.current.y * 0.7);
+
+      const deltaX = smoothedX - lastHandPos.current.x;
+      const deltaY = smoothedY - lastHandPos.current.y;
+
       if (data.gesture === "Extrude") {
         setExplodeFactor(data.pinch_distance);
-        lastHandPos.current = { x: null, y: null };
       }
       if (data.gesture === "Rotate") {
-        if (lastHandPos.current.x === null) {
-
-          lastHandPos.current = { x: data.x, y: data.y };
-        } else {
-
-          //EMA: yumuşatma filtresi
-          const smoothedX = (data.x * 0.2) + (lastHandPos.current.x * 0.8);
-          const smoothedY = (data.y * 0.2) + (lastHandPos.current.y * 0.8);
-
-          const deltaX = smoothedX - lastHandPos.current.x;
-          const deltaY = smoothedY - lastHandPos.current.y;
-
-          setTargetRotation(prev => ({
-            x: prev.x + (deltaY * 10),
-            y: prev.y + (deltaX * 10)
-          }));
-
-          lastHandPos.current = { x: smoothedX, y: smoothedY };
-        }
+        setTargetRotation(prev => ({
+          x: prev.x + (deltaY * 12),
+          y: prev.y + (deltaX * 12)
+        }));
       }
       else if (data.gesture === "Fist") {
-        lastHandPos.current = { x: null, y: null };
 
         const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
         setHandPosition({
@@ -114,16 +107,17 @@ function App() {
           y: clamp(-(data.y - 0.5) * 0.8, -0.08, 0.08)
         });
       }
-      else if (data.gesture === "Pinch") {
-        setExplodeFactor(0);
-        setHandPosition({ x: 0, y: 0 });
-        setTargetRotation({ x: 0, y: 0 });
-        lastHandPos.current = { x: null, y: null };
+
+      else if (data.gesture === "Pinch" || data.gesture === "Idle") {
+
+        if (data.gesture === "Pinch") {
+          setExplodeFactor(0);
+          setHandPosition({ x: 0, y: 0 });
+          setTargetRotation({ x: 0, y: 0 });
+        }
       }
-      else if (data.gesture === "Idle") {
-        setExplodeFactor(0);
-        lastHandPos.current = { x: null, y: null };
-      }
+
+      lastHandPos.current = { x: smoothedX, y: smoothedY };
     };
     return () => ws.close();
   }, []);
